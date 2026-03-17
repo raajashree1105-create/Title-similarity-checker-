@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Submitted Titles</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f3f4f6;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: #1e3a8a;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .nav-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1.5rem;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            color: #1e3a8a;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .title-cell {
+            max-width: 300px;
+            min-width: 200px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .status-unique {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-moderate {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-duplicate {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.5rem 1rem;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .btn-back:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-delete {
+            color: #ef4444;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #fee2e2;
+        }
+
+        .btn-clear-all {
+            background: #ef4444;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn-clear-all:hover {
+            background: #dc2626;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .alert-danger {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #ef4444;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Admin Portal</div>
+        <div class="nav-links">
+            <a href="/admin_dashboard">Dashboard</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="header">
+            <h1>Submitted Titles</h1>
+            <form action="/delete_all_titles" method="POST" onsubmit="return confirm('Are you sure you want to delete ALL submitted titles? This cannot be undone.');">
+                <button type="submit" class="btn-clear-all">Clear All Titles</button>
+            </form>
+        </div>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Student Email</th>
+                        <th>Submitted Title</th>
+                        <th>Most Similar Title</th>
+                        <th>Score (%)</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for title in titles %}
+                    <tr>
+                        <td>{{ title.id }}</td>
+                        <td>{{ title.student_email }}</td>
+                        <td class="title-cell">{{ title.title }}</td>
+                        <td class="title-cell">{{ title.similar_title }}</td>
+                        <td>{{ title.similarity_score }}</td>
+                        <td>
+                            <span class="status-badge 
+                                {% if title.status and 'Unique' in title.status %}status-unique
+                                {% elif title.status and 'Moderate' in title.status %}status-moderate
+                                {% else %}status-duplicate{% endif %}">
+                                {{ title.status }}
+                            </span>
+                        </td>
+                        <td>{{ title.created_at.strftime('%Y-%m-%d %H:%M') if title.created_at else '' }}</td>
+                        <td>
+                            <a href="/delete_title/{{ title.id }}" class="btn-delete" onclick="return confirm('Delete this title?')">Delete</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #6b7280; padding: 2rem;">No titles submitted
+                            yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <a href="/admin_dashboard" class="btn-back">← Back to Dashboard</a>
+    </div>
+</body>
+
+</html>

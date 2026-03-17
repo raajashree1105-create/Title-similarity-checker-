@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #f3f4f6;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: #1e3a8a;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .nav-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1.5rem;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: #1e3a8a;
+            margin-bottom: 0.5rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #6b7280;
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+
+        .stat-card.unique .value {
+            color: #10b981;
+        }
+
+        .stat-card.moderate .value {
+            color: #f59e0b;
+        }
+
+        .stat-card.duplicate .value {
+            color: #ef4444;
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.5rem 1rem;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .btn-back:hover {
+            background: #1d4ed8;
+        }
+
+        @media (max-width: 600px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">Admin Portal</div>
+        <div class="nav-links">
+            <a href="/admin_dashboard">Dashboard</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="header">
+            <h1>System Reports</h1>
+            <p style="color: #6b7280;">High-level overview of title submissions.</p>
+        </div>
+
+        <div class="grid">
+            <div class="stat-card">
+                <h3>Total Submissions</h3>
+                <div class="value">{{ stats.total }}</div>
+            </div>
+            <div class="stat-card unique">
+                <h3>Unique Titles</h3>
+                <div class="value">{{ stats.unique }}</div>
+            </div>
+            <div class="stat-card moderate">
+                <h3>Moderately Similar</h3>
+                <div class="value">{{ stats.moderate }}</div>
+            </div>
+            <div class="stat-card duplicate">
+                <h3>Duplicates</h3>
+                <div class="value">{{ stats.duplicate }}</div>
+            </div>
+        </div>
+
+        <a href="/admin_dashboard" class="btn-back">← Back to Dashboard</a>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Title Similarity Checker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: var(--primary-color);
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: var(--bg-gradient);
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+        }
+
+        /* Grid Layout */
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: stretch;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            resize: vertical;
+            min-height: 180px;
+            background-color: #f8fafc;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            background-color: #ffffff;
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Results Area */
+        .results-section {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .score-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .score-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            letter-spacing: -0.5px;
+            padding: 5px;
+            text-align: center;
+        }
+
+        .score-high {
+            background-color: var(--danger-color);
+        }
+
+        .score-medium {
+            background-color: var(--warning-color);
+        }
+
+        .score-low {
+            background-color: var(--success-color);
+        }
+
+        .score-details h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .score-details p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+
+        .similar-title {
+            background-color: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            margin-top: 0.5rem;
+        }
+
+        .similar-title h4 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+            letter-spacing: 0.05em;
+        }
+
+        .similar-title p {
+            font-size: 0.95rem;
+            font-style: italic;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+
+        .submitted-title-info {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .submitted-title-info h4 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .submitted-title-info p {
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 3rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* New Single Circle Style */
+        .result-display {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .score-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .score-circle-large {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-details {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .similar-title-box {
+            background-color: #f1f5f9;
+            padding: 1.25rem;
+            border-radius: 12px;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .similar-title-box h3 {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .similar-title-box p {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
+            line-height: 1.4;
+            font-style: italic;
+        }
+
+        .breakdown-pills {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .pill {
+            background-color: #f8fafc;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .pill span {
+            color: var(--text-muted);
+        }
+
+        .pill strong {
+            color: var(--text-main);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .layout-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .nav-links {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .score-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="nav-brand">Title Checker</div>
+        <div class="nav-links">
+            <a href="/student_dashboard" class="nav-link active">Dashboard</a>
+            <a href="/logout" class="nav-link logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Student Dashboard</h1>
+            <p>Welcome back! Check your project title for uniqueness against our academic database.</p>
+        </div>
+
+        <div class="layout-grid">
+            <!-- Left Column: Title Checker Form -->
+            <div class="card" id="submit-section">
+                <h2 class="card-title">Title Checker Form</h2>
+                <form action="/submit" method="POST" style="display: flex; flex-direction: column; height: 100%;">
+                    <div class="form-group">
+                        <label class="form-label" for="project_title">Enter your proposed project title:</label>
+                        <textarea id="project_title" name="project_title" class="form-textarea"
+                            placeholder="e.g., A deep learning approach to network intrusion detection systems..."
+                            required>{% if result and result.submitted_title %}{{ result.submitted_title }}{% endif %}</textarea>
+                    </div>
+                    <button type="submit" class="btn">Check Similarity</button>
+                </form>
+            </div>
+
+            <!-- Right Column: Similarity Result -->
+            <div class="card">
+                <h2 class="card-title">Similarity Result</h2>
+                <div class="results-section">
+                    {% if result %}
+                    {% if result.submitted_title %}
+                    <div class="submitted-title-info">
+                        <h4>Submitted Title:</h4>
+                        <p>"{{ result.submitted_title }}"</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="result-display">
+                        <div class="score-card">
+                            <div class="score-circle-large {{ result.score_class }}">
+                                {{ "%.2f"|format(result.final_score) }}%
+                            </div>
+                            <div class="status-badge {{ result.score_class }}">
+                                {{ result.status }}
+                            </div>
+                        </div>
+
+                        <div class="result-details">
+                            <div class="similar-title-box">
+                                <h3>Most Similar Project Found:</h3>
+                                <p>"{{ result.similar_title }}"</p>
+                            </div>
+
+                            <div class="breakdown-pills">
+                                <div class="pill">
+                                    <span>Keyword Match:</span>
+                                    <strong>{{ "%.2f"|format(result.breakdown.tfidf) }}%</strong>
+                                </div>
+                                <div class="pill">
+                                    <span>AI Meaning Match:</span>
+                                    <strong>{{ "%.2f"|format(result.breakdown.semantic) }}%</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <div class="empty-state">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p>Submit a title on the left to view the similarity analysis results here.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+</body>
+
+</html>
