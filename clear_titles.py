@@ -1,4 +1,4 @@
-import mysql.connector
+import mysql.connector  # type: ignore
 
 def clear_all_titles():
     try:

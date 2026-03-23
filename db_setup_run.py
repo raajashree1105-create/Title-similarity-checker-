@@ -1,4 +1,5 @@
 import mysql.connector  # type: ignore
+from werkzeug.security import generate_password_hash
 
 try:
     print("Connecting to db...")
@@ -15,7 +16,8 @@ try:
     
     if not res1:
         print("Inserting admin...")
-        cursor.execute("INSERT INTO users(fullname, email, password, role) VALUES ('System Admin', 'admin@gmail.com', 'admin123', 'admin');")
+        hashed_password = generate_password_hash('admin123')
+        cursor.execute("INSERT INTO users(fullname, email, password, role) VALUES ('System Admin', 'admin@gmail.com', %s, 'admin');", (hashed_password,))
         conn.commit()
     
     cursor.execute("SELECT * FROM users WHERE email='admin@gmail.com'")

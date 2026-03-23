@@ -10,6 +10,11 @@ from nltk.tokenize import word_tokenize  # type: ignore
 from nltk.stem import WordNetLemmatizer, PorterStemmer  # type: ignore
 from nltk.corpus import stopwords, wordnet  # type: ignore
 from sentence_transformers import SentenceTransformer  # type: ignore
+from flask_mail import Mail, Message  # type: ignore
+from werkzeug.security import generate_password_hash, check_password_hash  # type: ignore
+import random
+import string
+from datetime import datetime, timedelta
 
 # Ensure necessary NLTK datasets are downloaded
 nltk.download('punkt', quiet=True)
@@ -25,6 +30,18 @@ app.secret_key = 'super_secret_academic_key'
 # Load SentenceTransformer model once at startup
 print("Loading SentenceTransformer model 'all-MiniLM-L6-v2'...")
 semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# ==========================================
+# MAIL CONFIGURATION (Gmail SMTP)
+# ==========================================
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'raajashree1105@gmail.com'  # REPLACE WITH YOUR EMAIL
+app.config['MAIL_PASSWORD'] = 'ypgf meaw uxgr azfo'     # REPLACE WITH YOUR APP PASSWORD
+app.config['MAIL_DEFAULT_SENDER'] = 'raajashree1105@gmail.com'
+
+mail = Mail(app)
 
 # ==========================================
 # DATABASE CONFIGURATION (MySQL)
@@ -295,28 +312,34 @@ def calculate_semantic_similarity(new_title, titles_list):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
+        email = request.form.get('email', '').strip()
         password = request.form.get('password')
         
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM users WHERE email=%s AND password=%s", (email, password))
+            # Query by email ONLY to handle hashed passwords
+            cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
             user = cursor.fetchone()
             
             cursor.close()
             conn.close()
             
             if user:
-                session['role'] = user['role']
-                session['name'] = user['fullname']
-                session['email'] = user['email']
-                session['user_id'] = user['id']
-                
-                if user['role'] == 'admin':
-                    return redirect(url_for('admin_dashboard'))
+                # Check hashed password
+                if check_password_hash(user['password'], password) or user['password'] == password:
+                    # Logic: Allow plain text if migration hasn't happened yet, but prioritize hash
+                    session['role'] = user['role']
+                    session['name'] = user['fullname']
+                    session['email'] = user['email']
+                    session['user_id'] = user['id']
+                    
+                    if user['role'] == 'admin':
+                        return redirect(url_for('admin_dashboard'))
+                    else:
+                        return redirect(url_for('student_dashboard'))
                 else:
-                    return redirect(url_for('student_dashboard'))
+                    flash("Invalid email or password.")
             else:
                 flash("Invalid email or password.")
         else:
@@ -328,16 +351,17 @@ def login():
 def register():
     if request.method == 'POST':
         fullname = request.form.get('fullname')
-        email = request.form.get('email')
+        email = request.form.get('email', '').strip()
         password = request.form.get('password')
         
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
             try:
-                # Insert the user. We assume new registered users are students.
+                # Hash the password before saving
+                hashed_password = generate_password_hash(password)
                 cursor.execute("INSERT INTO users (fullname, email, password, role) VALUES (%s, %s, %s, 'student')", 
-                               (fullname, email, password))
+                               (fullname, email, hashed_password))
                 conn.commit()
                 flash('Registration successful! Please login.', 'success')
                 return redirect(url_for('login'))
@@ -431,24 +455,29 @@ def submit():
 @app.route('/admin_login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        email = request.form.get('email')
+        email = request.form.get('email', '').strip()
         password = request.form.get('password')
         
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM users WHERE email=%s AND password=%s AND role='admin'", (email, password))
+            # Query by email ONLY to handle hashed passwords
+            cursor.execute("SELECT * FROM users WHERE email=%s AND role='admin'", (email,))
             user = cursor.fetchone()
             
             cursor.close()
             conn.close()
             
             if user:
-                session['role'] = user['role']
-                session['name'] = user['fullname']
-                session['email'] = user['email']
-                session['user_id'] = user['id']
-                return redirect(url_for('admin_dashboard'))
+                # Check hashed password
+                if check_password_hash(user['password'], password) or user['password'] == password:
+                    session['role'] = user['role']
+                    session['name'] = user['fullname']
+                    session['email'] = user['email']
+                    session['user_id'] = user['id']
+                    return redirect(url_for('admin_dashboard'))
+                else:
+                    flash("Invalid admin credentials.")
             else:
                 flash("Invalid admin credentials.")
         else:
@@ -456,32 +485,117 @@ def admin_login():
             
     return render_template('admin_login.html')
 
-@app.route('/forgot_password', methods=['GET', 'POST'])
-def forgot_password():
+# ==========================================
+# DYNAMIC FORGOT PASSWORD SYSTEM (NEW)
+# ==========================================
+
+@app.route('/forgot', methods=['GET', 'POST'])
+def forgot():
     if request.method == 'POST':
-        email = request.form.get('email')
-        new_password = request.form.get('password')
+        email = request.form.get('email', '').strip()
+        
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+            user = cursor.fetchone()
+            
+            if user:
+                # Generate a 6-digit OTP
+                otp = ''.join(random.choices(string.digits, k=6))
+                
+                # Store OTP and email in session with an expiry (10 mins)
+                session['reset_otp'] = otp
+                session['reset_email'] = email
+                session['otp_expiry'] = (datetime.now() + timedelta(minutes=10)).isoformat()
+                
+                # Send real email using SMTP
+                try:
+                    msg = Message("Your Password Reset OTP", recipients=[email])
+                    msg.body = f"Hello {user['fullname']},\n\nYour OTP for password reset is: {otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, please ignore this email."
+                    mail.send(msg)
+                    flash("An OTP has been sent to your email.", "success")
+                    return redirect(url_for('verify'))
+                except Exception as e:
+                    print(f"Mail error: {e}")
+                    flash("Error sending email. Please check your SMTP configuration.")
+            else:
+                flash("Email address not found.")
+            
+            cursor.close()
+            conn.close()
+        else:
+            flash("Database connection failed.")
+            
+    return render_template('forgot.html')
+
+@app.route('/verify', methods=['GET', 'POST'])
+def verify():
+    if 'reset_otp' not in session:
+        return redirect(url_for('forgot'))
+        
+    if request.method == 'POST':
+        entered_otp = request.form.get('otp')
+        
+        # Check expiry
+        expiry_str = session.get('otp_expiry')
+        if expiry_str:
+            expiry_time = datetime.fromisoformat(expiry_str)
+            if datetime.now() > expiry_time:
+                session.pop('reset_otp', None)
+                flash("OTP has expired. Please request a new one.")
+                return redirect(url_for('forgot'))
+        
+        if entered_otp == session.get('reset_otp'):
+            session['otp_verified'] = True
+            flash("OTP verified successfully. You can now reset your password.", "success")
+            return redirect(url_for('reset'))
+        else:
+            flash("Invalid OTP. Please try again.")
+            
+    return render_template('verify.html')
+
+@app.route('/reset', methods=['GET', 'POST'])
+def reset():
+    if not session.get('otp_verified'):
+        flash("Please verify your identity first.")
+        return redirect(url_for('forgot'))
+        
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if password != confirm_password:
+            flash("Passwords do not match.")
+            return render_template('reset.html')
+            
+        email = session.get('reset_email')
+        hashed_pw = generate_password_hash(password)
         
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id FROM users WHERE email=%s AND role='admin'", (email,))
-            user = cursor.fetchone()
-            if user:
-                cursor.execute("UPDATE users SET password=%s WHERE email=%s", (new_password, email))
+            try:
+                cursor.execute("UPDATE users SET password=%s WHERE email=%s", (hashed_pw, email))
                 conn.commit()
-                flash("Password successfully reset.", 'success')
-                cursor.close()
-                conn.close()
-                return redirect(url_for('admin_login'))
-            else:
-                flash("Admin account with that email not found.")
+                
+                # Clear session
+                session.pop('reset_otp', None)
+                session.pop('reset_email', None)
+                session.pop('otp_expiry', None)
+                session.pop('otp_verified', None)
+                
+                flash("Password updated successfully. Please login with your new password.", "success")
+                return redirect(url_for('login'))
+            except Exception as e:
+                flash(f"Error updating password: {e}")
+            finally:
                 cursor.close()
                 conn.close()
         else:
             flash("Database connection failed.")
             
-    return render_template('forgot_password.html')
+    return render_template('reset.html')
 
 @app.route('/admin_dashboard')
 def admin_dashboard():

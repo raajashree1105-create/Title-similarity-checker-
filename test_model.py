@@ -1,6 +1,6 @@
 print("Importing sentence_transformers...")
 try:
-    from sentence_transformers import SentenceTransformer
+    from sentence_transformers import SentenceTransformer  # type: ignore
     print("Successfully imported SentenceTransformer")
     model = SentenceTransformer('all-MiniLM-L6-v2')
     print("Successfully loaded model")
